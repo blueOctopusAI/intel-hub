@@ -1,4 +1,4 @@
-# Add Project
+# Add Project to Registry
 
 Scan a project directory, auto-detect its stack and status, and add it to the project registry.
 
@@ -9,26 +9,63 @@ Scan a project directory, auto-detect its stack and status, and add it to the pr
 - If a path is given, scan the directory for stack detection
 - If just a name, ask the user for details
 
-## Process
+## Workflow
 
-### Step 1: Detect (if path provided)
+### Step 1: Scan the Directory (if path provided)
 
-Scan the directory for:
-- **Stack:** Check for package.json (Node/React/Next), requirements.txt/pyproject.toml (Python), *.csproj (C#/.NET), Cargo.toml (Rust), go.mod (Go), Gemfile (Ruby)
-- **GitHub:** Check `.git/config` for remote URL
-- **Activity:** Check `git log -1 --format="%ci"` for last commit date
+Read these files if they exist:
+- `README.md` — project description
+- `package.json` — name, dependencies, scripts (Node.js)
+- `Cargo.toml` — Rust projects
+- `requirements.txt` / `pyproject.toml` — Python
+- `*.csproj` — C#/.NET
+- `go.mod` — Go
+- `CLAUDE.md` — existing Claude Code configuration
+- `.git/config` — remote URL
 
-### Step 2: Gather Info
+Run these commands:
+- `git log --oneline -5` — recent commits (activity + last touched date)
+- `git remote -v` — GitHub URL
+- `ls` — top-level structure
 
-Read `config.json` for the business name and project lanes. Ask the user:
-- **What:** One-line description of the project
-- **Lane:** Which lane(s) from config? (show available lanes)
-- **Tier:** Which tier? ACTIVE, READY, INCUBATING, SUPPORTING, DORMANT
-- **Synergies:** Does this connect to any existing projects?
+### Step 2: Ask User for Tier
 
-### Step 3: Add to Registry
+Present the tier options:
+- **ACTIVE** — Getting regular work this week/month
+- **READY** — Could start this week with minimal setup
+- **INCUBATING** — Designed but not yet built
+- **SUPPORTING** — Tools and systems that serve active projects
+- **DORMANT** — Paused, could be revived
 
-Read `data/portfolio/projects.md` and add the project under the correct tier:
+Ask which tier to place the project in.
+
+### Step 3: Auto-Detect Fields
+
+From the scan, fill in:
+- **What** — from README or infer from structure
+- **Stack** — from dependencies
+- **Path** — absolute path scanned
+- **GitHub** — from git remote
+- **Status** — infer from git log recency
+- **Lane** — ask user (use lanes from `config.json` if available)
+- **Last touched** — from most recent git commit date
+
+### Step 4: Verify .gitignore Security
+
+**This step is mandatory.** Check the project's `.gitignore`:
+
+- [ ] `.env*` pattern present
+- [ ] `*.pem`, `*.key` patterns present
+- [ ] `credentials.json` pattern present
+- [ ] No `.env` files already tracked (`git ls-files | grep -i env`)
+
+If secrets are missing from `.gitignore`, add them. If `.env` files are already tracked, **warn the user** and recommend `git rm --cached`.
+
+Never register a project without confirming secrets are excluded from git.
+
+### Step 5: Add to Registry
+
+Insert the new project under the correct tier in `data/portfolio/projects.md`:
 
 ```markdown
 ### {project-name}
@@ -45,16 +82,27 @@ Read `data/portfolio/projects.md` and add the project under the correct tier:
 - **Last touched:** {today}
 ```
 
-### Step 4: Update Header
+Update the "Last updated" date at the top of projects.md.
 
-Update the project count and tier counts in the projects.md header.
+### Step 6: Check for Synergies
 
-### Step 5: Check Synergies
+Read existing projects. Identify:
+- Does this project use data from another project?
+- Does this project feed into another project?
+- Does this project share tech stack?
+- Could intelligence research help this project?
 
-Read through existing projects. If this new project has clear synergies (shared tech, shared audience, feeds into another project), note them on BOTH sides.
+If synergies found, update BOTH projects' synergy fields.
 
-### Step 6: Report
+### Step 7: Report
 
-Show what was added and any synergies detected.
+Show what was added, synergies detected, and suggested next actions.
+
+## Principles
+
+1. **Auto-detect everything possible** — minimize questions to the user
+2. **Always check synergies** — the registry's value is in connections
+3. **Always verify secrets** — security is mandatory, not optional
+4. **Follow existing format** — consistency matters
 
 ARGUMENTS: name_or_path
