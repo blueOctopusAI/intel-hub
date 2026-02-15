@@ -73,6 +73,14 @@ class TestGenerateClaudeMd:
         assert "/research" in result
         assert "/status" in result
         assert "/prioritize" in result
+        assert "/atomize" in result
+        assert "/add-project" in result
+        assert "/security" in result
+
+    def test_contains_content_workarounds(self, sample_config):
+        result = generate_claude_md(sample_config)
+        assert "Content Access Workarounds" in result
+        assert "syndication" in result.lower()
 
 
 class TestGenerateIntakeLog:
@@ -226,3 +234,44 @@ class TestGenerateAll:
         second_content = (tmp_path / "CLAUDE.md").read_text()
 
         assert first_content == second_content
+
+    def test_skips_existing_data_files(self, tmp_path, sample_config):
+        """Running generate twice should skip existing data files."""
+        generate_all(sample_config, tmp_path)
+
+        # Modify a data file (simulating user research)
+        intake = tmp_path / "data/research/intake-log.md"
+        intake.write_text("USER DATA HERE")
+
+        # Run again — should skip existing data files
+        created = generate_all(sample_config, tmp_path)
+
+        # CLAUDE.md always regenerated, data files skipped
+        assert "CLAUDE.md" in created
+        assert "data/research/intake-log.md" not in created
+        assert intake.read_text() == "USER DATA HERE"
+
+    def test_force_overwrites_existing(self, tmp_path, sample_config):
+        """Force flag should overwrite existing data files."""
+        generate_all(sample_config, tmp_path)
+
+        # Modify a data file
+        intake = tmp_path / "data/research/intake-log.md"
+        intake.write_text("USER DATA HERE")
+
+        # Force regenerate
+        created = generate_all(sample_config, tmp_path, force=True)
+
+        assert "data/research/intake-log.md" in created
+        assert intake.read_text() != "USER DATA HERE"
+
+    def test_claude_md_always_regenerated(self, tmp_path, sample_config):
+        """CLAUDE.md should always be regenerated even without force."""
+        generate_all(sample_config, tmp_path)
+
+        # Change config
+        sample_config["business_name"] = "New Name LLC"
+        generate_all(sample_config, tmp_path)
+
+        content = (tmp_path / "CLAUDE.md").read_text()
+        assert "New Name LLC" in content

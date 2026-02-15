@@ -12,6 +12,37 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PRESETS_DIR="$SCRIPT_DIR/presets"
 CONFIG_FILE="$SCRIPT_DIR/config.json"
+LOG_DIR="$SCRIPT_DIR/logs"
+mkdir -p "$LOG_DIR"
+LOG_FILE="$LOG_DIR/setup-$(date +%Y%m%d-%H%M%S).log"
+
+# Log function — writes to both console and log file
+log() {
+    echo "$@" | tee -a "$LOG_FILE"
+}
+
+log_only() {
+    echo "$@" >> "$LOG_FILE"
+}
+
+# Capture environment at the start
+log_only "=== Intel Hub Setup Log ==="
+log_only "Date: $(date)"
+log_only "Platform: $(uname -srm)"
+log_only "Shell: $SHELL"
+log_only "User: ${USER:-${USERNAME:-unknown}}"
+log_only "Working dir: $(pwd)"
+log_only "Script dir: $SCRIPT_DIR"
+log_only "Python: $(python3 --version 2>&1 || echo 'NOT FOUND')"
+log_only "Claude Code: $(which claude 2>/dev/null || echo 'NOT FOUND')"
+log_only "Git: $(git --version 2>&1 || echo 'NOT FOUND')"
+log_only "Args: $*"
+if [ -f /proc/version ] && grep -qi microsoft /proc/version 2>/dev/null; then
+    log_only "WSL: Yes"
+else
+    log_only "WSL: No"
+fi
+log_only "==========================="
 
 # Colors (if terminal supports them)
 if [ -t 1 ]; then
@@ -63,10 +94,12 @@ if $NON_INTERACTIVE; then
         echo "Error: --non-interactive requires config.json to exist"
         exit 1
     fi
+    log_only "Mode: non-interactive"
     echo "Generating files from existing config.json..."
     python3 "$SCRIPT_DIR/scripts/generate.py" --config "$CONFIG_FILE" --output-dir "$SCRIPT_DIR"
     echo ""
     echo -e "${GREEN}Done!${RESET} Run ${CYAN}claude${RESET} to start using your intelligence hub."
+    log_only "Non-interactive setup completed successfully"
     exit 0
 fi
 
@@ -328,8 +361,22 @@ with open(config_path, "w") as f:
     json.dump(config, f, indent=2)
 PYTHON_SCRIPT
 
+# --- Log choices ---
+log_only "Preset: $PRESET_NAME"
+log_only "Business: $BUSINESS_NAME"
+log_only "Description: $BUSINESS_DESC"
+log_only "Role: $YOUR_ROLE"
+log_only "Industry: $INDUSTRY_LABEL"
+log_only "Categories: ${CATEGORIES[*]}"
+log_only "Projects: ${PROJECTS[*]:-none}"
+log_only "Platforms: ${PLATFORMS[*]:-none}"
+log_only "Voice: $VOICE"
+log_only "Audience: $AUDIENCE"
+
 # --- Generate all files ---
+log_only "Running generate.py..."
 python3 "$SCRIPT_DIR/scripts/generate.py" --config "$CONFIG_FILE" --output-dir "$SCRIPT_DIR"
+log_only "generate.py completed"
 
 # --- Done ---
 echo ""
@@ -348,4 +395,6 @@ echo -e "  3. Type ${CYAN}/status${RESET} to see your dashboard"
 echo ""
 echo -e "  Your data lives in ${DIM}data/${RESET}"
 echo -e "  Your config is in ${DIM}config.json${RESET}"
+echo -e "  Setup log saved to ${DIM}$LOG_FILE${RESET}"
 echo ""
+log_only "Setup completed successfully"

@@ -66,6 +66,17 @@ See your project pulse, recommended focus, stale items, and new recommendations.
 
 Vote on recommendations. Manage your project tiers.
 
+## Skills
+
+| Skill | Purpose |
+|-------|---------|
+| `/research <URL>` | Process a link through the 9-step intelligence pipeline |
+| `/status [project]` | Project pulse, recommended focus, stale items, new recommendations |
+| `/prioritize <args>` | Move projects between tiers or vote on recommendations |
+| `/atomize <source>` | Turn a blog post or article into social media variations |
+| `/add-project <name>` | Scan a project directory, detect stack, add to registry |
+| `/security [target]` | Security audit — exposed secrets, deps, tool evaluations |
+
 ## Industry Presets
 
 The setup wizard includes presets that pre-fill sensible defaults:
@@ -103,12 +114,15 @@ intel-hub/
 │       ├── projects.md                # Your project registry
 │       ├── content-pipeline.md        # Content by platform
 │       └── implementation-backlog.md  # Ideas to build/adopt/offer
-└── .claude/skills/                    # /research, /status, /prioritize
+├── logs/                              # Setup and operation logs
+└── .claude/skills/                    # All 6 skills above
 ```
 
 All data is markdown files. Human-readable, git-trackable, no database required.
 
-## Advanced: Non-Interactive Setup
+## Advanced
+
+### Non-Interactive Setup
 
 If you already have a `config.json`:
 
@@ -122,6 +136,35 @@ Or load a preset directly:
 bash setup.sh --preset home-services
 ```
 
+### Regenerating Config
+
+If you change `config.json` and want to regenerate `CLAUDE.md` without overwriting your research data:
+
+```bash
+python3 scripts/generate.py
+```
+
+To force-overwrite all files (deletes existing research data):
+
+```bash
+python3 scripts/generate.py --force
+```
+
+### Troubleshooting
+
+Setup and generation logs are saved to `logs/` with timestamps. Each run captures:
+- Platform, OS, shell, Python version
+- Claude Code installation status
+- WSL detection (for Windows users)
+- Config choices and file generation results
+
+Check the latest log:
+
+```bash
+ls -lt logs/ | head -5
+cat logs/setup-*.log
+```
+
 ## Testing
 
 ```bash
@@ -132,4 +175,4 @@ bash tests/test_setup.sh
 
 ## License
 
-MIT
+MIT — see [LICENSE](LICENSE)

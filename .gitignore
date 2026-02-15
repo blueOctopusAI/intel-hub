@@ -20,5 +20,8 @@ venv/
 # CLAUDE.md
 # data/
 
+# Logs (generated during setup and operation)
+logs/
+
 # Node (if dashboard added later)
 node_modules/

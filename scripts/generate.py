@@ -17,10 +17,78 @@ Usage:
 
 import argparse
 import json
+import logging
 import os
+import platform
 import sys
 from datetime import datetime
 from pathlib import Path
+
+
+LOG_DIR = Path("logs")
+
+logger = logging.getLogger("intel-hub")
+
+
+def setup_logging(output_dir: Path) -> Path:
+    """Configure logging to both console and a timestamped log file."""
+    log_dir = output_dir / "logs"
+    log_dir.mkdir(parents=True, exist_ok=True)
+
+    log_file = log_dir / f"setup-{datetime.now().strftime('%Y%m%d-%H%M%S')}.log"
+
+    # File handler: DEBUG level (everything)
+    fh = logging.FileHandler(log_file)
+    fh.setLevel(logging.DEBUG)
+    fh.setFormatter(logging.Formatter("%(asctime)s [%(levelname)s] %(message)s"))
+
+    # Console handler: INFO level
+    ch = logging.StreamHandler()
+    ch.setLevel(logging.INFO)
+    ch.setFormatter(logging.Formatter("%(message)s"))
+
+    logger.setLevel(logging.DEBUG)
+    logger.addHandler(fh)
+    logger.addHandler(ch)
+
+    return log_file
+
+
+def log_environment(output_dir: Path):
+    """Capture environment details for troubleshooting."""
+    logger.debug("=== Environment ===")
+    logger.debug(f"Platform: {platform.system()} {platform.release()}")
+    logger.debug(f"Machine: {platform.machine()}")
+    logger.debug(f"Python: {sys.version}")
+    logger.debug(f"Working dir: {os.getcwd()}")
+    logger.debug(f"Output dir: {output_dir.resolve()}")
+    logger.debug(f"User: {os.environ.get('USER', os.environ.get('USERNAME', 'unknown'))}")
+    logger.debug(f"Shell: {os.environ.get('SHELL', 'unknown')}")
+    logger.debug(f"PATH entries: {len(os.environ.get('PATH', '').split(os.pathsep))}")
+
+    # Check for Claude Code
+    import shutil
+    claude_path = shutil.which("claude")
+    logger.debug(f"Claude Code: {claude_path or 'NOT FOUND'}")
+
+    # Check git
+    git_path = shutil.which("git")
+    logger.debug(f"Git: {git_path or 'NOT FOUND'}")
+
+    # WSL detection
+    is_wsl = "microsoft" in platform.release().lower() or os.path.exists("/proc/version")
+    if is_wsl:
+        try:
+            with open("/proc/version") as f:
+                version_info = f.read()
+            if "microsoft" in version_info.lower():
+                logger.debug("WSL: Yes (detected via /proc/version)")
+            else:
+                logger.debug("WSL: No (Linux but not WSL)")
+        except (FileNotFoundError, PermissionError):
+            logger.debug("WSL: Unknown")
+    else:
+        logger.debug("WSL: No")
 
 
 def load_config(config_path: str) -> dict:
@@ -33,11 +101,22 @@ def load_config(config_path: str) -> dict:
     with open(path) as f:
         config = json.load(f)
 
+    logger.debug(f"Config loaded from {config_path}")
+    logger.debug(f"Config fields: {list(config.keys())}")
+
     required_fields = ["business_name", "industry", "categories", "voice"]
     missing = [f for f in required_fields if f not in config]
     if missing:
+        logger.error(f"Missing required config fields: {', '.join(missing)}")
         print(f"Error: Missing required config fields: {', '.join(missing)}", file=sys.stderr)
         sys.exit(1)
+
+    logger.info(f"Business: {config['business_name']}")
+    logger.debug(f"Industry: {config['industry']}")
+    logger.debug(f"Categories: {config['categories']}")
+    logger.debug(f"Voice: {config['voice']}")
+    logger.debug(f"Platforms: {config.get('platforms', [])}")
+    logger.debug(f"Projects: {config.get('projects', [])}")
 
     return config
 
@@ -75,6 +154,9 @@ This system processes research links into actionable intelligence, tracks projec
 | `/research <URL>` | Process a link through the full research pipeline |
 | `/status [project]` | Status report — project pulse, recommendations, stale items |
 | `/prioritize <args>` | Move projects between tiers or vote on recommendations |
+| `/atomize <source>` | Turn a blog post into social media variations |
+| `/add-project <name>` | Scan a project directory and add it to the registry |
+| `/security [target]` | Security audit — secrets, deps, tool evaluations |
 
 ## The `/research` Pipeline
 
@@ -134,6 +216,18 @@ Write in a **{voice}** tone. The audience is **{audience}**.
 
 **Claude does:** Fetch, read, analyze, document, maintain all research files, create action items.
 **User does:** Install/test tools, engage on social, create published content, make final decisions.
+
+## Content Access Workarounds
+
+Some content requires special handling:
+
+| Content Type | Workaround |
+|-------------|-----------|
+| X.com tweets | Syndication API: `cdn.syndication.twimg.com/tweet-result?id=<ID>&token=x` |
+| PDFs | Search for web article summaries instead |
+| JS-rendered pages | Try raw/API versions or ask user to paste content |
+| YouTube videos | Mark `pending-transcript` in knowledge/transcripts/ — user generates |
+| GitHub repos | Fetch raw README via `raw.githubusercontent.com` |
 
 ## Action Categories
 
@@ -365,8 +459,12 @@ Every actionable idea from research for {name}. If it's worth doing, it goes her
 """
 
 
-def generate_all(config: dict, output_dir: Path) -> list[str]:
-    """Generate all files. Returns list of created file paths."""
+def generate_all(config: dict, output_dir: Path, force: bool = False) -> list[str]:
+    """Generate all files. Returns list of created file paths.
+
+    If force=False (default), skips files that already exist and contain user data.
+    CLAUDE.md is always regenerated since it's derived from config.
+    """
     generators = {
         "CLAUDE.md": generate_claude_md,
         "data/research/intake-log.md": generate_intake_log,
@@ -378,14 +476,35 @@ def generate_all(config: dict, output_dir: Path) -> list[str]:
         "data/portfolio/implementation-backlog.md": generate_implementation_backlog,
     }
 
+    # CLAUDE.md is always regenerated (config-derived, not user data)
+    always_regenerate = {"CLAUDE.md"}
+
     created = []
+    skipped = []
     for rel_path, generator in generators.items():
         full_path = output_dir / rel_path
         full_path.parent.mkdir(parents=True, exist_ok=True)
-        content = generator(config)
-        full_path.write_text(content)
-        created.append(str(rel_path))
 
+        if full_path.exists() and rel_path not in always_regenerate and not force:
+            logger.debug(f"SKIP (exists): {rel_path}")
+            skipped.append(str(rel_path))
+            continue
+
+        try:
+            content = generator(config)
+            full_path.write_text(content)
+            logger.debug(f"CREATED: {rel_path} ({len(content)} chars)")
+            created.append(str(rel_path))
+        except Exception as e:
+            logger.error(f"FAILED to generate {rel_path}: {e}")
+            raise
+
+    if skipped:
+        logger.info(f"Skipped {len(skipped)} existing files (use --force to overwrite):")
+        for f in skipped:
+            logger.info(f"  {f}")
+
+    logger.info(f"Generated {len(created)} files, skipped {len(skipped)}")
     return created
 
 
@@ -393,16 +512,24 @@ def main():
     parser = argparse.ArgumentParser(description="Generate intelligence hub files from config")
     parser.add_argument("--config", default="config.json", help="Path to config.json")
     parser.add_argument("--output-dir", default=".", help="Output directory (project root)")
+    parser.add_argument("--force", action="store_true", help="Overwrite existing data files")
     args = parser.parse_args()
 
-    config = load_config(args.config)
     output_dir = Path(args.output_dir)
 
-    created = generate_all(config, output_dir)
+    log_file = setup_logging(output_dir)
+    logger.info("Intel Hub setup starting...")
+    log_environment(output_dir)
 
-    print(f"Generated {len(created)} files:")
+    config = load_config(args.config)
+
+    created = generate_all(config, output_dir, force=args.force)
+
+    logger.info(f"Setup complete. {len(created)} files generated.")
+    logger.info(f"Log saved to: {log_file}")
+
     for f in created:
-        print(f"  {f}")
+        logger.debug(f"  {f}")
 
 
 if __name__ == "__main__":
