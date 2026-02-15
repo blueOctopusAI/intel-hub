@@ -1,0 +1,28 @@
+{
+  "industry": "restaurant",
+  "industry_label": "Restaurant / Food Service",
+  "description": "Restaurant, cafe, food truck, catering, bar, bakery",
+  "categories": [
+    "Implement",
+    "Menu & Sourcing",
+    "Marketing",
+    "Monitor",
+    "Competitors"
+  ],
+  "project_lanes": ["Revenue", "Operations", "Growth"],
+  "bookmark_topics": [
+    "Food Trends",
+    "Equipment & Tech",
+    "Marketing Ideas",
+    "Competitor Intel",
+    "Operations",
+    "Hiring & Team"
+  ],
+  "default_voice": "friendly",
+  "audience": "diners and local community",
+  "example_projects": [
+    "Summer menu refresh",
+    "Catering expansion",
+    "Social media presence"
+  ]
+}

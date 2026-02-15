@@ -1,0 +1,28 @@
+{
+  "industry": "real_estate",
+  "industry_label": "Real Estate",
+  "description": "Brokerage, property management, real estate investing, development",
+  "categories": [
+    "Implement",
+    "Market Intel",
+    "Marketing",
+    "Monitor",
+    "Competitors"
+  ],
+  "project_lanes": ["Listings", "Operations", "Growth"],
+  "bookmark_topics": [
+    "Market Data",
+    "Technology & Tools",
+    "Marketing Ideas",
+    "Competitor Intel",
+    "Regulatory",
+    "Client Experience"
+  ],
+  "default_voice": "professional",
+  "audience": "buyers and sellers",
+  "example_projects": [
+    "Spring listing campaign",
+    "Open house system",
+    "Referral network build"
+  ]
+}

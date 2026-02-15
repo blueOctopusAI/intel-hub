@@ -1,0 +1,3 @@
+# Core: no dependencies (stdlib only)
+# Dev/test dependencies below — install with: pip install -r requirements.txt
+pytest>=8.0

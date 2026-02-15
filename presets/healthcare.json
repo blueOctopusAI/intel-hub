@@ -1,0 +1,28 @@
+{
+  "industry": "healthcare",
+  "industry_label": "Healthcare / Wellness",
+  "description": "Dental, medical practice, chiropractic, wellness center, therapy",
+  "categories": [
+    "Implement",
+    "Patient Experience",
+    "Compliance",
+    "Monitor",
+    "Marketing"
+  ],
+  "project_lanes": ["Patient Care", "Operations", "Growth"],
+  "bookmark_topics": [
+    "Clinical Trends",
+    "Technology & Equipment",
+    "Compliance & Regulatory",
+    "Patient Acquisition",
+    "Operations",
+    "Staffing"
+  ],
+  "default_voice": "professional",
+  "audience": "patients and referral sources",
+  "example_projects": [
+    "Patient intake modernization",
+    "Insurance panel expansion",
+    "Community health events"
+  ]
+}

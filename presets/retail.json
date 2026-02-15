@@ -1,0 +1,28 @@
+{
+  "industry": "retail",
+  "industry_label": "Retail / E-commerce",
+  "description": "Brick-and-mortar shop, online store, boutique, wholesale",
+  "categories": [
+    "Implement",
+    "Product & Inventory",
+    "Marketing",
+    "Monitor",
+    "Competitors"
+  ],
+  "project_lanes": ["Revenue", "Operations", "Growth"],
+  "bookmark_topics": [
+    "Market Trends",
+    "Product Sourcing",
+    "Marketing Ideas",
+    "Competitor Intel",
+    "Tech & Tools",
+    "Customer Experience"
+  ],
+  "default_voice": "friendly",
+  "audience": "shoppers",
+  "example_projects": [
+    "Online store launch",
+    "Holiday inventory plan",
+    "Customer loyalty program"
+  ]
+}

@@ -1,0 +1,28 @@
+{
+  "industry": "professional_services",
+  "industry_label": "Professional Services",
+  "description": "Consulting, legal, accounting, marketing agency, freelance",
+  "categories": [
+    "Implement",
+    "Offer",
+    "Tools",
+    "Monitor",
+    "Content"
+  ],
+  "project_lanes": ["Product", "Proof", "Pipeline"],
+  "bookmark_topics": [
+    "Industry Trends",
+    "Tools & Software",
+    "Business Development",
+    "Competitor Intel",
+    "Content Ideas",
+    "Methodology"
+  ],
+  "default_voice": "professional",
+  "audience": "business owners and decision-makers",
+  "example_projects": [
+    "Client acquisition system",
+    "Service package redesign",
+    "Thought leadership content"
+  ]
+}

@@ -1,0 +1,28 @@
+{
+  "industry": "home_services",
+  "industry_label": "Home Services",
+  "description": "Contractor, plumber, HVAC, pool, landscaping, electrical, cleaning",
+  "categories": [
+    "Implement",
+    "Marketing",
+    "Monitor",
+    "Competitors",
+    "Equipment & Suppliers"
+  ],
+  "project_lanes": ["Revenue", "Operations", "Growth"],
+  "bookmark_topics": [
+    "Industry Trends",
+    "Equipment & Tech",
+    "Marketing Ideas",
+    "Competitor Intel",
+    "Business Operations",
+    "Hiring & Team"
+  ],
+  "default_voice": "casual",
+  "audience": "homeowners",
+  "example_projects": [
+    "Spring marketing push",
+    "Hire second technician",
+    "New truck buildout"
+  ]
+}
